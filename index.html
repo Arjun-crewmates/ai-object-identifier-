@@ -8,13 +8,12 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #2c3e50, #4ca1af);
+      background: #0d0d0d url('https://www.transparenttextures.com/patterns/stardust.png');
       color: #fff;
       text-align: center;
       padding: 20px;
       border-left: 20px solid #f39c12;
       border-right: 20px solid #f39c12;
-      background-image: url('https://www.transparenttextures.com/patterns/graphy-dark.png');
     }
     button {
       padding: 10px 20px;
@@ -26,6 +25,7 @@
       color: #fff;
       cursor: pointer;
       transition: background 0.3s ease;
+      box-shadow: 0 0 10px rgba(243,156,18,0.6);
     }
     button:hover {
       background: #e67e22;
@@ -42,32 +42,18 @@
       flex-shrink: 0;
     }
     #label-container {
-      font-size: 18px;
-      text-align: left;
+      font-size: 22px;
+      text-align: center;
       max-width: 320px;
-      background: rgba(0, 0, 0, 0.4);
-      padding: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
       border-radius: 12px;
-    }
-    .prediction-bar {
-      height: 20px;
-      border-radius: 8px;
-      margin: 5px 0;
-      background: rgba(255,255,255,0.1);
-      overflow: hidden;
-    }
-    .prediction-fill {
-      height: 100%;
-      background: #f39c12;
-      text-align: right;
-      padding-right: 5px;
-      color: #000;
-      font-size: 12px;
       font-weight: bold;
+      box-shadow: 0 0 15px rgba(243,156,18,0.3);
     }
     canvas {
       border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 20px rgba(243,156,18,0.4);
     }
     @keyframes wave {
       0% { transform: rotate(0deg); }
@@ -82,12 +68,12 @@
       margin: 20px auto;
       border-radius: 20px;
       animation: wave 2s ease-in-out 1;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 20px rgba(243,156,18,0.5);
     }
     #status-message {
       margin-top: 10px;
       font-size: 18px;
-      color: #ffe;
+      color: #f5f5f5;
     }
   </style>
 </head>
@@ -100,7 +86,7 @@
   <div id="status-message"></div>
   <div id="webcam-section">
     <div id="webcam-container"></div>
-    <div id="label-container"></div>
+    <div id="label-container">Waiting for prediction...</div>
   </div>
   <canvas id="snapshot" width="300" height="300" style="display:none;"></canvas>
 
@@ -128,18 +114,7 @@
       loopRequest = window.requestAnimationFrame(loop);
 
       labelContainer = document.getElementById("label-container");
-      labelContainer.innerHTML = "";
-      for (let i = 0; i < maxPredictions; i++) {
-        const div = document.createElement("div");
-        const bar = document.createElement("div");
-        bar.classList.add("prediction-bar");
-        const fill = document.createElement("div");
-        fill.classList.add("prediction-fill");
-        bar.appendChild(fill);
-        div.appendChild(document.createTextNode("Loading..."));
-        div.appendChild(bar);
-        labelContainer.appendChild(div);
-      }
+      labelContainer.innerHTML = "Detecting...";
 
       document.getElementById("snapshot").style.display = 'none';
       document.getElementById("status-message").textContent = "Camera is running ✅";
@@ -164,7 +139,7 @@
       }
 
       document.getElementById("snapshot").style.display = 'none';
-      document.getElementById("label-container").innerHTML = "";
+      document.getElementById("label-container").innerHTML = "Camera stopped ❌";
       document.getElementById("status-message").textContent = "Camera stopped ❌";
       document.getElementById("startBtn").disabled = false;
       webcam = null;
@@ -173,16 +148,11 @@
     async function predict() {
       const prediction = await model.predict(webcam.canvas);
 
-      for (let i = 0; i < maxPredictions; i++) {
-        const className = prediction[i].className;
-        const probability = prediction[i].probability;
-        const bar = labelContainer.childNodes[i].querySelector(".prediction-fill");
-        const parentDiv = labelContainer.childNodes[i];
 
-        parentDiv.childNodes[0].nodeValue = `${className}`;
-        bar.style.width = `${Math.round(probability * 100)}%`;
-        bar.textContent = `${(probability * 100).toFixed(1)}%`;
-      }
+      let topPrediction = prediction.reduce((max, p) => p.probability > max.probability ? p : max, prediction[0]);
+
+      
+      labelContainer.innerHTML = `📌 <strong>${topPrediction.className}</strong> <br> 🔢 ${(topPrediction.probability * 100).toFixed(1)}%`;
     }
   </script>
 </body>
